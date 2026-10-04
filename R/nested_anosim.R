@@ -60,45 +60,10 @@ nested_anosim <- function(comm, main, nested,
                           verbose = TRUE,
                           ...) {
 
-  if (!requireNamespace("vegan", quietly = TRUE)) {
-    stop("Package 'vegan' is required. Install it with install.packages('vegan').")
-  }
-
-  # ---- Input checks ---------------------------------------------------------
-  comm <- as.data.frame(comm)
-  if (!all(vapply(comm, is.numeric, logical(1)))) {
-    stop("'comm' must contain only numeric columns (community data).")
-  }
-  if (anyNA(comm)) stop("'comm' contains NA values.")
-  n <- nrow(comm)
-  if (length(main) != n || length(nested) != n) {
-    stop("'main' and 'nested' must have the same length as nrow(comm).")
-  }
-  if (anyNA(main) || anyNA(nested)) stop("'main' and 'nested' must not contain NA.")
-
-  main   <- as.character(main)
-  nested <- as.character(nested)
-  kept   <- seq_len(n)
-  removed <- integer(0)
-
-  # ---- Remove empty samples -------------------------------------------------
-  empty <- which(rowSums(comm) == 0)
-  if (length(empty) > 0) {
-    if (remove_empty) {
-      removed <- empty
-      kept    <- setdiff(kept, empty)
-      comm    <- comm[kept, , drop = FALSE]
-      main    <- main[kept]
-      nested  <- nested[kept]
-      warning(length(empty), " empty sample(s) removed (rows: ",
-              paste(empty, collapse = ", "), ").", call. = FALSE)
-    } else {
-      stop("Found ", length(empty), " empty sample(s); set remove_empty = TRUE ",
-           "or remove them beforehand.")
-    }
-  }
-
-  if (length(unique(main)) < 2) stop("'main' needs at least two levels.")
+  # ---- Input checks and removal of empty samples ---------------------------
+  dat <- .prepare_input(comm, main, nested, remove_empty)
+  comm <- dat$comm; main <- dat$main; nested <- dat$nested
+  kept <- dat$kept; removed <- dat$removed
 
   # ---- Distance matrix ------------------------------------------------------
   d <- vegan::vegdist(comm, method = method, binary = binary)
@@ -131,11 +96,8 @@ nested_anosim <- function(comm, main, nested,
                       R = NA_real_, p = NA_real_,
                       note = "", stringsAsFactors = FALSE)
 
-    if (length(sizes) < 2) {
-      out$note <- "skipped: fewer than 2 nested groups"
-    } else if (any(sizes < 2)) {
-      out$note <- "skipped: a nested group has < 2 samples"
-    } else {
+    out$note <- .skip_note(sizes)
+    if (out$note == "") {
       sub_d <- stats::as.dist(d_mat[idx, idx, drop = FALSE])
       a <- run_anosim(sub_d, sub_nested)
       nested_objects[[lv]] <- a

@@ -2,7 +2,7 @@
 
 [![R-CMD-check](https://github.com/fonturbel/nestedANOSIM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fonturbel/nestedANOSIM/actions/workflows/R-CMD-check.yaml)
 
-### nestedANOSIM package version 0.0-1
+### nestedANOSIM package version 0.0-2
 
 A small toolkit for **hierarchical (two-way, nested) ANOSIM** on community data, plus ggplot2 graphics for ANOSIM and nMDS results. The `vegan` package only implements one-way ANOSIM (`vegan::anosim()`); this package wraps it to evaluate a nested factor (e.g., mistletoe species) within each level of a main factor (e.g., study year) in a single call.
 
@@ -13,6 +13,7 @@ This package was developed by Francisco E. Fontúrbel from code originally writt
 - **Overall test**: ANOSIM on the combined `main.nested` factor.
 - **Main factor test**: ANOSIM on the main factor alone.
 - **Nested tests**: ANOSIM of the nested factor within each level of the main factor, with optional multiple-testing correction (`p_adjust`).
+- **SIMPER**: which taxa drive the differences, for the main factor and for the nested factor within each main-factor level, as tidy tables (`nested_simper()`).
 - **Group summary**: sample size, mean richness and mean abundance per `main.nested` group.
 - **Plots**: rank-dissimilarity boxplots (`plot_anosim_box()`) and nMDS ordinations with convex hulls for any number of groups (`plot_nmds_hulls()`).
 
@@ -38,7 +39,7 @@ install.packages("ggsci")   # optional, only for named palettes (e.g., "startrek
 
 | Package   | Used for                                                  |
 | --------- | --------------------------------------------------------- |
-| `vegan`   | dissimilarities, `anosim()`, `metaMDS()`                  |
+| `vegan`   | dissimilarities, `anosim()`, `simper()`, `metaMDS()`      |
 | `ggplot2` | `plot_anosim_box()`, `plot_nmds_hulls()`                  |
 | `ggsci`   | optional named color palettes                             |
 | `testthat`, `rmarkdown`, `knitr` | tests and vignettes (dev only)     |
@@ -69,6 +70,11 @@ res$overall            # anosim object, combined factor
 res$main               # anosim object, main factor
 res$nested             # table: nested test within each main-factor level
 res$group_summary
+
+sim <- nested_simper(comm, main = meta$Year_study, nested = meta$Mistletoe,
+                     permutations = 999, cutoff = 0.7, seed = 123)
+sim$main               # taxa driving the difference between years
+sim$nested             # taxa driving the mistletoe difference within each year
 
 plot_anosim_box(res, which = "main")
 plot_anosim_box(res, which = "First")     # nested test within a main-factor level

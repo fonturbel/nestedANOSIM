@@ -123,6 +123,35 @@ by_species$plot
 Named palettes from the **ggsci** package (e.g., `palette = "startrek"`) can be
 used when it is installed.
 
+## Which taxa drive the differences? (SIMPER)
+
+ANOSIM says whether groups differ; SIMPER says which taxa contribute most to
+the average Bray-Curtis dissimilarity between them. `nested_simper()` uses the
+same design as `nested_anosim()`: between years, and between mistletoe species
+within each year. By default it reports the taxa that together account for 70%
+of the dissimilarity, with permutation p-values for each taxon.
+
+```{r simper}
+sim <- nested_simper(comm   = comm,
+                     main   = meta$Year_study,
+                     nested = meta$Mistletoe,
+                     permutations = 999, cutoff = 0.7, seed = 123)
+```
+
+The results are tidy data frames, ready to filter, sort or export:
+
+```{r simper-tidy}
+head(sim$nested[, c("main_level", "species", "pct", "cum_pct",
+                    "mean_a", "mean_b", "p")])
+```
+
+`mean_a` and `mean_b` are the mean abundances in the first and second group of
+each comparison (named in `group_a` and `group_b`), so they show which group
+each taxon is more abundant in. SIMPER contributions are descriptive: abundant
+and highly variable taxa tend to dominate them (Warton et al. 2012, *Methods in
+Ecology and Evolution* 3: 89-101), so read them together with the group means
+and p-values.
+
 ## Citation
 
 If you use these data, please cite doi:10.1016/j.jaridenv.2025.105518. To cite

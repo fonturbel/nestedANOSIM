@@ -1,6 +1,6 @@
 Package: nestedANOSIM
 Title: Hierarchical (Nested) ANOSIM and Graphics for Community Data
-Version: 0.0-1
+Version: 0.0-2
 Authors@R:
     person("Francisco Enrique", "Fontúrbel", , "fonturbel@gmail.com",
            role = c("aut", "cre"),
@@ -10,7 +10,9 @@ Description: Extends the one-way analysis of similarities (ANOSIM) in
     within each level of a main factor. In a single call it runs ANOSIM on
     the combined factor, on the main factor, and on the nested factor within
     each main-factor level (with optional multiple-testing correction), and
-    summarises sample size, richness and abundance per group. Also provides
+    summarises sample size, richness and abundance per group. A companion
+    similarity percentages (SIMPER) analysis with the same design reports
+    which taxa drive each difference, as tidy tables. Also provides
     'ggplot2' graphics for ANOSIM rank dissimilarities and for non-metric
     multidimensional scaling (nMDS) ordinations with convex hulls for any
     number of groups. Includes a camera-trap dataset of mistletoe visitors

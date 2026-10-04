@@ -6,7 +6,7 @@
 \alias{nestedANOSIM-package}
 \title{nestedANOSIM: Hierarchical (Nested) ANOSIM and Graphics for Community Data}
 \description{
-Extends the one-way analysis of similarities (ANOSIM) in 'vegan' to a hierarchical design in which a nested factor is evaluated within each level of a main factor. In a single call it runs ANOSIM on the combined factor, on the main factor, and on the nested factor within each main-factor level (with optional multiple-testing correction), and summarises sample size, richness and abundance per group. Also provides 'ggplot2' graphics for ANOSIM rank dissimilarities and for non-metric multidimensional scaling (nMDS) ordinations with convex hulls for any number of groups. Includes a camera-trap dataset of mistletoe visitors from Las Chinchillas National Reserve, Chile.
+Extends the one-way analysis of similarities (ANOSIM) in 'vegan' to a hierarchical design in which a nested factor is evaluated within each level of a main factor. In a single call it runs ANOSIM on the combined factor, on the main factor, and on the nested factor within each main-factor level (with optional multiple-testing correction), and summarises sample size, richness and abundance per group. A companion similarity percentages (SIMPER) analysis with the same design reports which taxa drive each difference, as tidy tables. Also provides 'ggplot2' graphics for ANOSIM rank dissimilarities and for non-metric multidimensional scaling (nMDS) ordinations with convex hulls for any number of groups. Includes a camera-trap dataset of mistletoe visitors from Las Chinchillas National Reserve, Chile.
 }
 \seealso{
 Useful links:
