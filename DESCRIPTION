@@ -1,0 +1,39 @@
+Package: nestedANOSIM
+Title: Hierarchical (Nested) ANOSIM and Graphics for Community Data
+Version: 0.0-1
+Authors@R:
+    person("Francisco Enrique", "Fontúrbel", , "fonturbel@gmail.com",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-8585-2816"))
+Description: Extends the one-way analysis of similarities (ANOSIM) in
+    'vegan' to a hierarchical design in which a nested factor is evaluated
+    within each level of a main factor. In a single call it runs ANOSIM on
+    the combined factor, on the main factor, and on the nested factor within
+    each main-factor level (with optional multiple-testing correction), and
+    summarises sample size, richness and abundance per group. Also provides
+    'ggplot2' graphics for ANOSIM rank dissimilarities and for non-metric
+    multidimensional scaling (nMDS) ordinations with convex hulls for any
+    number of groups. Includes a camera-trap dataset of mistletoe visitors
+    from Las Chinchillas National Reserve, Chile.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 3.5)
+Imports:
+    vegan,
+    ggplot2,
+    stats,
+    grDevices,
+    utils
+Suggests:
+    ggsci,
+    testthat (>= 3.0.0),
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+LazyData: true
+URL: https://github.com/fonturbel/nestedANOSIM
+BugReports: https://github.com/fonturbel/nestedANOSIM/issues
+Config/roxygen2/version: 8.1.0

@@ -1,0 +1,9 @@
+bibentry(
+  bibtype  = "Misc",
+  title    = "nestedANOSIM: hierarchical ANOSIM and graphics for community data",
+  author   = person("Francisco E.", "Fontúrbel"),
+  year     = "2026",
+  note     = "R package version 0.0-1",
+  url      = "https://github.com/fonturbel/nestedANOSIM",
+  textVersion = "Fontúrbel FE (2026) nestedANOSIM: hierarchical ANOSIM and graphics for community data. https://github.com/fonturbel/nestedANOSIM"
+)

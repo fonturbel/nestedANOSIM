@@ -1,0 +1,129 @@
+---
+title: "Hierarchical ANOSIM of mistletoe visitors"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Hierarchical ANOSIM of mistletoe visitors}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 6.5, fig.height = 4.5, dpi = 96)
+```
+
+This vignette reproduces the community analysis of animal visitors to two
+mistletoe species, *Tristerix aphyllus* and *T. verticillatus*, recorded with
+camera traps at Las Chinchillas National Reserve, northern Chile, over two
+sampling years (doi:10.1016/j.jaridenv.2025.105518). The question is whether
+visitor assemblages differ between years and, within each year, between
+mistletoe species.
+
+```{r setup}
+library(nestedANOSIM)
+```
+
+## Data
+
+`mistletoe_visitors` has one row per camera and year. The first three columns
+are metadata and the remaining 40 columns hold the number of records of each
+visitor taxon. The focal species (*Mimus thenca* and *Sephanoides
+sephaniodes*) and unidentified records were already removed, as in the
+original analysis.
+
+```{r data}
+data(mistletoe_visitors)
+dim(mistletoe_visitors)
+table(mistletoe_visitors$Year_study, mistletoe_visitors$Mistletoe)
+
+comm <- mistletoe_visitors[, -(1:3)]   # community data only
+meta <- mistletoe_visitors[, 1:3]
+```
+
+## Hierarchical ANOSIM
+
+`nested_anosim()` computes Bray-Curtis dissimilarities once and runs three
+kinds of ANOSIM on them:
+
+1. an overall test on the combined year x mistletoe factor,
+2. a test of the main factor (year), and
+3. a test of the nested factor (mistletoe species) within each year, here with
+   Holm correction for the two tests.
+
+Cameras that recorded none of the retained taxa have an undefined Bray-Curtis
+dissimilarity, so they are removed with a warning.
+
+```{r anosim}
+res <- nested_anosim(comm   = comm,
+                     main   = meta$Year_study,
+                     nested = meta$Mistletoe,
+                     method = "bray", permutations = 9999,
+                     p_adjust = "holm", seed = 123)
+```
+
+The pieces of the result can be used directly:
+
+```{r pieces}
+res$nested
+res$group_summary
+```
+
+`res$overall`, `res$main` and `res$nested_objects` are ordinary
+`vegan::anosim()` objects, so `summary()` and other vegan methods work on them.
+
+Note that the nested tests are separate ANOSIMs run within each year, not a
+variance partition such as a nested PERMANOVA (`vegan::adonis2()`). Report them
+as a hierarchical ANOSIM.
+
+## Rank-dissimilarity boxplots
+
+`plot_anosim_box()` is a ggplot2 version of `plot()` for ANOSIM. Each box shows
+the ranks of the dissimilarities between groups or within one group. A
+positive R means that between-group ranks are higher than within-group ones.
+
+```{r box-main}
+plot_anosim_box(res, which = "main", xlab = "Year")
+```
+
+```{r box-nested, fig.show = "hold"}
+plot_anosim_box(res, which = "First", xlab = "Mistletoe")
+plot_anosim_box(res, which = "Second", xlab = "Mistletoe")
+```
+
+Many pairs of cameras share no taxa (Bray-Curtis = 1). Those tied pairs get the
+same, highest rank, which is why several boxes reach the same top value.
+
+## nMDS ordination
+
+`plot_nmds_hulls()` runs `vegan::metaMDS()` on the stored dissimilarity matrix
+and draws one convex hull per group. `groups` refers to the original 87 rows;
+the samples removed as empty are dropped automatically.
+
+```{r nmds-all}
+grp <- paste(meta$Year_study, meta$Mistletoe, sep = " - ")
+out <- plot_nmds_hulls(res, groups = grp, seed = 1)
+out$plot
+out$stress
+```
+
+One *T. aphyllus* camera from the first year (CTa096) sits far from the rest.
+It recorded a single visit of one taxon that only three other cameras share,
+so its dissimilarities are almost all 1. This is a feature of the data, not of
+the ordination.
+
+The function returns the fitted `metaMDS` object and the site scores, so the
+same ordination can be redrawn with other groups without refitting:
+
+```{r nmds-mistletoe}
+by_species <- plot_nmds_hulls(out$mds, groups = meta$Mistletoe[res$kept],
+                              palette = c("#1B9E77", "#D95F02"))
+by_species$plot
+```
+
+Named palettes from the **ggsci** package (e.g., `palette = "startrek"`) can be
+used when it is installed.
+
+## Citation
+
+If you use these data, please cite doi:10.1016/j.jaridenv.2025.105518. To cite
+the package, see `citation("nestedANOSIM")`.
