@@ -46,7 +46,7 @@
 #'   \item{Phrygilus_alaudinus}{Records of *Phrygilus alaudinus*.}
 #'   \item{Phrygilus_atriceps}{Records of *Phrygilus atriceps*.}
 #'   \item{Phrygilus_gayi}{Records of *Phrygilus gayi*.}
-#'   \item{Phyllotys_darwini}{Records of *Phyllotys darwini*.}
+#'   \item{Phyllotis_darwini}{Records of *Phyllotis darwini*.}
 #'   \item{Porphyrospiza_alaudina}{Records of *Porphyrospiza alaudina*.}
 #'   \item{Pseudasthenes_humicola}{Records of *Pseudasthenes humicola*.}
 #'   \item{Pteroptochos_megapodius}{Records of *Pteroptochos megapodius*.}

@@ -40,7 +40,7 @@ used in both years.}
 \item{Phrygilus_alaudinus}{Records of \emph{Phrygilus alaudinus}.}
 \item{Phrygilus_atriceps}{Records of \emph{Phrygilus atriceps}.}
 \item{Phrygilus_gayi}{Records of \emph{Phrygilus gayi}.}
-\item{Phyllotys_darwini}{Records of \emph{Phyllotys darwini}.}
+\item{Phyllotis_darwini}{Records of \emph{Phyllotis darwini}.}
 \item{Porphyrospiza_alaudina}{Records of \emph{Porphyrospiza alaudina}.}
 \item{Pseudasthenes_humicola}{Records of \emph{Pseudasthenes humicola}.}
 \item{Pteroptochos_megapodius}{Records of \emph{Pteroptochos megapodius}.}
