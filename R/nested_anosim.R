@@ -1,36 +1,53 @@
 #' Two-way (hierarchical) ANOSIM
 #'
 #' vegan::anosim() only handles one grouping factor. This function wraps it to
-#' run a "two-way" ANOSIM in which a nested factor (e.g., mistletoe species)
-#' is evaluated within each level of a main factor (e.g., study year):
+#' run a "two-way" ANOSIM in which a second factor (`nested`, e.g., mistletoe
+#' species) is tested within each level of a main factor (`main`, e.g., study
+#' year):
 #'   1. Overall test on the combined main.nested factor.
-#'   2. Test of the main factor alone.
-#'   3. Test of the nested factor separately within each level of the main factor
-#'      (optionally with multiple-testing correction).
+#'   2. Test of the main factor alone (optionally with permutations restricted
+#'      within `strata`, for paired or repeated samples).
+#'   3. Test of the second factor separately within each level of the main
+#'      factor (optionally with multiple-testing correction).
+#'
+#' The second factor can be truly nested in the main factor (each of its levels
+#' occurs in only one main-factor level, e.g., sites within regions) or crossed
+#' with it (the same levels occur in every main-factor level, e.g., the same two
+#' mistletoe species sampled every year). The analysis is the same; only the
+#' wording of the results changes. In the crossed case, step 3 tests the second
+#' factor separately in each level of the main factor (simple effects).
 #'
 #' @param comm        Community matrix or data.frame (rows = samples, columns = taxa).
 #'                    Must be numeric and contain only the community data.
 #' @param main        Vector (factor/character) with the main grouping factor; length = nrow(comm).
-#' @param nested      Vector (factor/character) with the factor nested within `main`.
+#' @param nested      Vector (factor/character) with the second factor, tested within
+#'                    each level of `main` (nested in or crossed with `main`).
 #' @param method      Dissimilarity index passed to vegan::vegdist() (default "bray").
 #' @param binary      Logical; passed to vegdist() (presence/absence transformation).
 #' @param permutations Number of permutations for anosim() (default 999).
 #' @param remove_empty Logical; drop samples whose total abundance is zero (default TRUE).
 #'                    Needed because Bray-Curtis is undefined for empty rows.
-#' @param p_adjust    Method for p.adjust() applied to the nested tests (default "none";
+#' @param p_adjust    Method for p.adjust() applied to the within-level tests (default "none";
 #'                    e.g., "holm", "bonferroni", "BH").
 #' @param seed        Optional integer. If given, the RNG seed is set to this value
 #'                    before \emph{each} ANOSIM, so every test is reproducible on its
 #'                    own (e.g., the main-factor test equals
 #'                    \code{set.seed(seed); vegan::anosim(dist, main)}).
+#' @param strata      Optional vector (length = nrow(comm)) of blocks for the
+#'                    main-factor test. Permutations are then restricted within
+#'                    blocks, which is needed when the same sampling unit (e.g., a
+#'                    camera) is measured in every level of the main factor (e.g.,
+#'                    every year). It is trimmed together with the empty samples.
+#'                    It is used only for the main-factor test: the overall and
+#'                    within-level tests use unrestricted permutations.
 #' @param verbose     Logical; print the formatted report when the function runs (default TRUE).
 #' @param ...         Further arguments passed to vegan::anosim() (e.g., parallel = 4).
 #'
 #' @return An object of class "nested_anosim", a list with:
 #'   \item{overall}{anosim object for the combined main.nested factor}
 #'   \item{main}{anosim object for the main factor}
-#'   \item{nested}{data.frame with the nested-factor test for each main-factor level}
-#'   \item{nested_objects}{list with the full anosim objects of the nested tests}
+#'   \item{nested}{data.frame with the second-factor test within each main-factor level}
+#'   \item{nested_objects}{list with the full anosim objects of the within-level tests}
 #'   \item{group_summary}{data.frame: N, mean richness and mean abundance per main.nested group}
 #'   \item{dist}{the dissimilarity matrix used}
 #'   \item{removed}{indices of the samples removed (empty rows)}
@@ -44,7 +61,7 @@
 #'                      main   = mistletoe_visitors$Year_study,
 #'                      nested = mistletoe_visitors$Mistletoe,
 #'                      permutations = 199, p_adjust = "holm", seed = 123)
-#' res$nested          # table of nested tests
+#' res$nested          # tests within each main-factor level
 #' res$group_summary
 #'
 #' @importFrom vegan vegdist anosim
@@ -57,30 +74,37 @@ nested_anosim <- function(comm, main, nested,
                           remove_empty = TRUE,
                           p_adjust = "none",
                           seed = NULL,
+                          strata = NULL,
                           verbose = TRUE,
                           ...) {
 
   # ---- Input checks and removal of empty samples ---------------------------
-  dat <- .prepare_input(comm, main, nested, remove_empty)
+  dat <- .prepare_input(comm, main, nested, remove_empty, strata)
   comm <- dat$comm; main <- dat$main; nested <- dat$nested
-  kept <- dat$kept; removed <- dat$removed
+  strata <- dat$strata; kept <- dat$kept; removed <- dat$removed
+
+  # Combined labels must identify each main x nested pair uniquely
+  combined <- paste(main, nested, sep = ".")
+  if (length(unique(combined)) != nrow(unique(data.frame(main, nested)))) {
+    stop("Combining 'main' and 'nested' with \".\" gives ambiguous group labels; ",
+         "remove the dots from their level names.")
+  }
 
   # ---- Distance matrix ------------------------------------------------------
   d <- vegan::vegdist(comm, method = method, binary = binary)
   d_mat <- as.matrix(d)
 
   # Reset the seed before each test so each one is reproducible on its own
-  run_anosim <- function(dis, grouping) {
+  run_anosim <- function(dis, grouping, strata = NULL) {
     if (!is.null(seed)) set.seed(seed)
-    vegan::anosim(dis, grouping, permutations = permutations, ...)
+    vegan::anosim(dis, grouping, permutations = permutations, strata = strata, ...)
   }
 
   # ---- 1. Overall test (combined factor) -----------------------------------
-  combined <- paste(main, nested, sep = ".")
-  overall  <- run_anosim(d, combined)
+  overall <- run_anosim(d, combined)
 
-  # ---- 2. Main factor -------------------------------------------------------
-  main_test <- run_anosim(d, main)
+  # ---- 2. Main factor (permutations within strata, if given) ---------------
+  main_test <- run_anosim(d, main, strata = strata)
 
   # ---- 3. Nested factor within each level of main --------------------------
   nested_objects <- list()
@@ -129,13 +153,17 @@ nested_anosim <- function(comm, main, nested,
          removed = removed, kept = kept,
          settings = list(method = method, binary = binary,
                          permutations = permutations, p_adjust = p_adjust,
-                         seed = seed)),
+                         seed = seed, strata = !is.null(strata))),
     class = "nested_anosim"
   )
 
   if (verbose) print(res)
   invisible(res)
 }
+
+
+# Fixed-notation number for the report (internal); avoids e.g. "1e-04"
+.fmt_num <- function(x, digits) formatC(x, format = "f", digits = digits)
 
 
 # Significance stars helper (internal)
@@ -159,30 +187,32 @@ print.nested_anosim <- function(x, digits = 4, ...) {
   s <- x$settings
   cat("=== NESTED (TWO-WAY) ANOSIM ===\n")
   cat("Dissimilarity:", s$method, "| permutations:", s$permutations,
-      "| nested p-adjust:", s$p_adjust, "\n")
+      "| p-adjust (within-level tests):", s$p_adjust, "\n")
   cat("Samples analysed:", length(x$kept))
   if (length(x$removed) > 0) cat(" (", length(x$removed), " empty removed)", sep = "")
   cat("\n\n")
 
   cat("1. OVERALL TEST (main.nested combined)\n")
-  cat("   R =", round(x$overall$statistic, digits),
-      "| p =", round(x$overall$signif, digits),
+  cat("   R =", .fmt_num(x$overall$statistic, digits),
+      "| p =", .fmt_num(x$overall$signif, digits),
       .anosim_stars(x$overall$signif), "\n\n")
 
-  cat("2. MAIN FACTOR\n")
-  cat("   R =", round(x$main$statistic, digits),
-      "| p =", round(x$main$signif, digits),
+  cat("2. MAIN FACTOR")
+  if (isTRUE(s$strata)) cat(" (permutations within strata)")
+  cat("\n")
+  cat("   R =", .fmt_num(x$main$statistic, digits),
+      "| p =", .fmt_num(x$main$signif, digits),
       .anosim_stars(x$main$signif), "\n\n")
 
-  cat("3. NESTED FACTOR WITHIN EACH MAIN-FACTOR LEVEL\n")
+  cat("3. SECOND FACTOR WITHIN EACH MAIN-FACTOR LEVEL\n")
   for (i in seq_len(nrow(x$nested))) {
     r <- x$nested[i, ]
     cat("   ", r$main_level, " (", r$group_sizes, ")\n", sep = "")
     if (is.na(r$R)) {
       cat("      ", r$note, "\n", sep = "")
     } else {
-      cat("      R =", round(r$R, digits), "| p =", round(r$p, digits))
-      if (s$p_adjust != "none") cat(" | p_adj =", round(r$p_adj, digits))
+      cat("      R =", .fmt_num(r$R, digits), "| p =", .fmt_num(r$p, digits))
+      if (s$p_adjust != "none") cat(" | p_adj =", .fmt_num(r$p_adj, digits))
       cat(" ", .anosim_stars(if (s$p_adjust != "none") r$p_adj else r$p), "\n", sep = "")
     }
   }

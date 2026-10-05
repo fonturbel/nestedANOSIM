@@ -12,6 +12,7 @@ nested_simper(
   cutoff = 0.7,
   remove_empty = TRUE,
   seed = NULL,
+  strata = NULL,
   verbose = TRUE
 )
 }
@@ -21,7 +22,8 @@ Must be numeric and contain only the community data.}
 
 \item{main}{Vector (factor/character) with the main grouping factor; length = nrow(comm).}
 
-\item{nested}{Vector (factor/character) with the factor nested within \code{main}.}
+\item{nested}{Vector (factor/character) with the second factor, tested within
+each level of \code{main} (nested in or crossed with \code{main}).}
 
 \item{permutations}{Number of permutations for the taxon-level tests in
 \code{\link[vegan:simper]{vegan::simper()}} (default 999). Use 0 to skip them (no p-values).}
@@ -37,12 +39,17 @@ Needed because Bray-Curtis is undefined for empty rows.}
 \item{seed}{Optional integer. If given, the RNG seed is set to this value
 before each SIMPER, so every comparison is reproducible on its own.}
 
+\item{strata}{Optional vector (length = nrow(comm)) of blocks for the
+main-factor comparison: permutations are restricted within blocks (e.g.,
+the same camera sampled every year). Used only for the main factor, as in
+\code{\link[=nested_anosim]{nested_anosim()}}.}
+
 \item{verbose}{Logical; print the formatted report (default TRUE).}
 }
 \value{
 An object of class \code{"nested_simper"}, a list with:
 \item{main}{tidy data.frame for the main-factor comparisons}
-\item{nested}{tidy data.frame for the nested-factor comparisons within
+\item{nested}{tidy data.frame for the second-factor comparisons within
 each main-factor level (column \code{main_level})}
 \item{levels}{data.frame with the group sizes of each main-factor level and
 a note when its nested comparison was skipped}
@@ -66,8 +73,8 @@ to the average Bray-Curtis dissimilarity between them. This function wraps
 \code{\link[vegan:simper]{vegan::simper()}} with the same design as \code{\link[=nested_anosim]{nested_anosim()}}:
 \enumerate{
 \item SIMPER between the levels of the main factor.
-\item SIMPER between the levels of the nested factor, separately within each
-level of the main factor.
+\item SIMPER between the levels of the second factor (nested in or crossed
+with the main factor), separately within each level of the main factor.
 }
 }
 \details{

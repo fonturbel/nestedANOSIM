@@ -23,6 +23,7 @@ importFrom(ggplot2,
   theme,
   theme_bw
 )
+importFrom(permute,how)
 importFrom(stats,
   as.dist,
   p.adjust

@@ -40,23 +40,48 @@ comm <- mistletoe_visitors[, -(1:3)]   # community data only
 meta <- mistletoe_visitors[, 1:3]
 ```
 
-## Hierarchical ANOSIM
+## Study design
+
+Two features of the design shape the analysis:
+
+- **Mistletoe species is crossed with year, not nested in it.** Both species
+  were sampled in both years. (A truly nested factor has levels that occur in
+  only one level of the main factor, such as sites within regions.) What *is*
+  nested here are the cameras, within mistletoe species: each camera watched
+  one mistletoe plant.
+- **Cameras are repeated across years.** Most cameras were sampled in both
+  years, so the two years are paired samples, not independent ones.
+
+```{r design}
+cams <- table(meta$Camera)
+table(times_sampled = cams)
+```
+
+So the year test must permute year labels *within* each camera (`strata`);
+otherwise it treats the two records of a camera as independent. Within a single
+year each camera occurs once, so the species tests within each year use
+unrestricted permutations.
+
+## Two-way ANOSIM
 
 `nested_anosim()` computes Bray-Curtis dissimilarities once and runs three
 kinds of ANOSIM on them:
 
 1. an overall test on the combined year x mistletoe factor,
-2. a test of the main factor (year), and
-3. a test of the nested factor (mistletoe species) within each year, here with
+2. a test of the main factor (year), with permutations restricted within
+   cameras, and
+3. a test of the second factor (mistletoe species) within each year, here with
    Holm correction for the two tests.
 
 Cameras that recorded none of the retained taxa have an undefined Bray-Curtis
-dissimilarity, so they are removed with a warning.
+dissimilarity, so they are removed with a warning; `strata` is trimmed with
+them.
 
 ```{r anosim}
 res <- nested_anosim(comm   = comm,
                      main   = meta$Year_study,
                      nested = meta$Mistletoe,
+                     strata = meta$Camera,
                      method = "bray", permutations = 9999,
                      p_adjust = "holm", seed = 123)
 ```
@@ -71,9 +96,10 @@ res$group_summary
 `res$overall`, `res$main` and `res$nested_objects` are ordinary
 `vegan::anosim()` objects, so `summary()` and other vegan methods work on them.
 
-Note that the nested tests are separate ANOSIMs run within each year, not a
-variance partition such as a nested PERMANOVA (`vegan::adonis2()`). Report them
-as a hierarchical ANOSIM.
+Note that the within-year tests are separate ANOSIMs, one per year, not a
+variance partition such as a PERMANOVA (`vegan::adonis2()`). Because mistletoe
+species is crossed with year here, report them as tests of mistletoe species
+within each year (simple effects), not as a nested factor.
 
 ## Rank-dissimilarity boxplots
 
@@ -127,14 +153,15 @@ used when it is installed.
 
 ANOSIM says whether groups differ; SIMPER says which taxa contribute most to
 the average Bray-Curtis dissimilarity between them. `nested_simper()` uses the
-same design as `nested_anosim()`: between years, and between mistletoe species
-within each year. By default it reports the taxa that together account for 70%
+same design as `nested_anosim()`: between years (permuting within cameras),
+and between mistletoe species within each year. By default it reports the taxa that together account for 70%
 of the dissimilarity, with permutation p-values for each taxon.
 
 ```{r simper}
 sim <- nested_simper(comm   = comm,
                      main   = meta$Year_study,
                      nested = meta$Mistletoe,
+                     strata = meta$Camera,
                      permutations = 999, cutoff = 0.7, seed = 123)
 ```
 

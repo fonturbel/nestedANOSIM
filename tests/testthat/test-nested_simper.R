@@ -102,3 +102,22 @@ test_that("print method works and returns the object invisibly", {
   expect_identical(out, sim)
   expect_output(print(sim), "A vs B")
 })
+
+test_that("strata restricts SIMPER permutations for the main factor only", {
+  dd <- make_comm(seed = 9)
+  cam <- rep(paste0("c", 1:10), 2)
+  sim <- suppressMessages(nested_simper(dd$comm, dd$main, dd$nested, permutations = 99,
+                       cutoff = 1, seed = 4, strata = cam, verbose = FALSE))
+  set.seed(4)
+  ref <- suppressMessages(vegan::simper(dd$comm, dd$main,
+                       permutations = permute::how(nperm = 99,
+                                                   blocks = factor(cam)))[[1]])
+  expect_equal(sim$main$p, unname(ref$p[ref$ord]))
+  free <- nested_simper(dd$comm, dd$main, dd$nested, permutations = 99,
+                        cutoff = 1, seed = 4, verbose = FALSE)
+  expect_identical(sim$nested, free$nested)
+  expect_output(print(sim), "permutations within strata")
+  # without permutations, strata is harmless
+  expect_silent(nested_simper(dd$comm, dd$main, dd$nested, permutations = 0,
+                              strata = cam, verbose = FALSE))
+})

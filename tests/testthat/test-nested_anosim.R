@@ -115,3 +115,56 @@ test_that("example dataset has the documented structure", {
                      "not_identified") %in% names(mistletoe_visitors)))
   expect_equal(sum(rowSums(mistletoe_visitors[, -(1:3)]) == 0), 7)
 })
+
+test_that("strata restricts permutations in the main-factor test only", {
+  dd <- make_comm()
+  cam <- rep(paste0("c", 1:10), 2)            # each unit sampled in A and B
+  res <- suppressMessages(nested_anosim(dd$comm, dd$main, dd$nested, permutations = 199,
+                       seed = 11, strata = cam, verbose = FALSE))
+  set.seed(11)
+  ref <- suppressMessages(vegan::anosim(vegan::vegdist(dd$comm), dd$main, permutations = 199,
+                       strata = cam))
+  expect_identical(res$main$perm, ref$perm)
+  expect_identical(res$main$signif, ref$signif)
+  expect_true(isTRUE(res$settings$strata))
+  # Overall and within-level tests are unaffected by strata
+  free <- nested_anosim(dd$comm, dd$main, dd$nested, permutations = 199,
+                        seed = 11, verbose = FALSE)
+  expect_identical(res$overall$perm, free$overall$perm)
+  expect_identical(res$nested, free$nested)
+  expect_output(print(res), "permutations within strata")
+})
+
+test_that("strata is trimmed together with empty samples", {
+  dd <- make_comm()
+  cam <- rep(paste0("c", 1:10), 2)
+  dd$comm[c(4, 17), ] <- 0
+  res <- suppressMessages(suppressWarnings(
+    nested_anosim(dd$comm, dd$main, dd$nested, permutations = 99, seed = 2,
+                  strata = cam, verbose = FALSE)
+  ))
+  keep <- setdiff(1:20, c(4, 17))
+  set.seed(2)
+  ref <- suppressMessages(vegan::anosim(vegan::vegdist(dd$comm[keep, ]), dd$main[keep],
+                       permutations = 99, strata = cam[keep]))
+  expect_identical(res$main$perm, ref$perm)
+})
+
+test_that("bad strata input is rejected", {
+  dd <- make_comm()
+  cam <- rep(paste0("c", 1:10), 2)
+  expect_error(nested_anosim(dd$comm, dd$main, dd$nested, strata = cam[-1],
+                             verbose = FALSE), "'strata' must have the same length")
+  cam[3] <- NA
+  expect_error(nested_anosim(dd$comm, dd$main, dd$nested, strata = cam,
+                             verbose = FALSE), "'strata' must not contain NA")
+})
+
+test_that("ambiguous combined labels are rejected", {
+  dd <- make_comm()
+  main   <- rep(c("a.b", "a"), each = 10)
+  nested <- rep(c("c", "b.c"), each = 10)
+  nested[c(1:5, 11:15)] <- "z"
+  expect_error(nested_anosim(dd$comm, main, nested, verbose = FALSE),
+               "ambiguous group labels")
+})

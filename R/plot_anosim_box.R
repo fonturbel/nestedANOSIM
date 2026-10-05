@@ -8,7 +8,7 @@
 #'   class \code{"nested_anosim"} (see \code{\link{nested_anosim}}).
 #' @param which Only used when \code{x} is a \code{"nested_anosim"} object.
 #'   One of \code{"overall"}, \code{"main"}, or the name of a main-factor level
-#'   (e.g., \code{"First"}) to plot the nested test run within that level.
+#'   (e.g., \code{"First"}) to plot the second-factor test run within that level.
 #' @param title Plot title. If \code{NULL}, a title is built automatically.
 #' @param xlab,ylab Axis labels.
 #' @param palette \code{NULL} (default ggplot2 colors), a character vector of
@@ -45,13 +45,13 @@ plot_anosim_box <- function(x, which = "overall", title = NULL,
   if (inherits(x, "nested_anosim")) {
     if (identical(which, "overall")) {
       a <- x$overall
-      auto_title <- "Overall (main x nested groups)"
+      auto_title <- "Overall (main x second factor)"
     } else if (identical(which, "main")) {
       a <- x$main
       auto_title <- "Main factor"
     } else if (which %in% names(x$nested_objects)) {
       a <- x$nested_objects[[which]]
-      auto_title <- paste("Nested factor within", which)
+      auto_title <- paste("Within", which)
     } else {
       stop("'which' must be \"overall\", \"main\" or one of: ",
            paste(names(x$nested_objects), collapse = ", "), ".")

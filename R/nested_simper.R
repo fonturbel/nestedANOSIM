@@ -5,8 +5,8 @@
 #' to the average Bray-Curtis dissimilarity between them. This function wraps
 #' [vegan::simper()] with the same design as [nested_anosim()]:
 #'   1. SIMPER between the levels of the main factor.
-#'   2. SIMPER between the levels of the nested factor, separately within each
-#'      level of the main factor.
+#'   2. SIMPER between the levels of the second factor (nested in or crossed
+#'      with the main factor), separately within each level of the main factor.
 #'
 #' Results are returned as tidy data frames (one row per taxon and pairwise
 #' comparison), sorted by contribution and trimmed to the taxa that together
@@ -26,11 +26,15 @@
 #'   crosses it. Use 1 to keep all taxa.
 #' @param seed Optional integer. If given, the RNG seed is set to this value
 #'   before each SIMPER, so every comparison is reproducible on its own.
+#' @param strata Optional vector (length = nrow(comm)) of blocks for the
+#'   main-factor comparison: permutations are restricted within blocks (e.g.,
+#'   the same camera sampled every year). Used only for the main factor, as in
+#'   [nested_anosim()].
 #' @param verbose Logical; print the formatted report (default TRUE).
 #'
 #' @return An object of class `"nested_simper"`, a list with:
 #'   \item{main}{tidy data.frame for the main-factor comparisons}
-#'   \item{nested}{tidy data.frame for the nested-factor comparisons within
+#'   \item{nested}{tidy data.frame for the second-factor comparisons within
 #'     each main-factor level (column `main_level`)}
 #'   \item{levels}{data.frame with the group sizes of each main-factor level and
 #'     a note when its nested comparison was skipped}
@@ -68,12 +72,14 @@
 #' @seealso [nested_anosim()], [vegan::simper()]
 #' @importFrom vegan simper
 #' @importFrom utils combn
+#' @importFrom permute how
 #' @export
 nested_simper <- function(comm, main, nested,
                           permutations = 999,
                           cutoff = 0.7,
                           remove_empty = TRUE,
                           seed = NULL,
+                          strata = NULL,
                           verbose = TRUE) {
 
   if (!is.numeric(cutoff) || length(cutoff) != 1 || cutoff <= 0 || cutoff > 1) {
@@ -81,17 +87,19 @@ nested_simper <- function(comm, main, nested,
   }
 
   # ---- Input checks and removal of empty samples ---------------------------
-  dat <- .prepare_input(comm, main, nested, remove_empty)
-  comm <- dat$comm; main <- dat$main; nested <- dat$nested
+  dat <- .prepare_input(comm, main, nested, remove_empty, strata)
+  comm <- dat$comm; main <- dat$main; nested <- dat$nested; strata <- dat$strata
 
   # Reset the seed before each SIMPER so each one is reproducible on its own
-  run_simper <- function(x, grouping) {
+  run_simper <- function(x, grouping, perm = permutations) {
     if (!is.null(seed)) set.seed(seed)
-    vegan::simper(x, grouping, permutations = permutations)
+    vegan::simper(x, grouping, permutations = perm)
   }
 
-  # ---- 1. Main factor -------------------------------------------------------
-  main_sim <- run_simper(comm, main)
+  # ---- 1. Main factor (permutations within strata, if given) ---------------
+  main_perm <- if (is.null(strata) || permutations == 0) permutations else
+    permute::how(nperm = permutations, blocks = factor(strata))
+  main_sim <- run_simper(comm, main, main_perm)
   main_tab <- .tidy_simper(main_sim, main, cutoff)
 
   # ---- 2. Nested factor within each level of main --------------------------
@@ -125,7 +133,7 @@ nested_simper <- function(comm, main, nested,
          simper_objects = list(main = main_sim, nested = nested_sims),
          removed = dat$removed, kept = dat$kept,
          settings = list(permutations = permutations, cutoff = cutoff,
-                         seed = seed)),
+                         seed = seed, strata = !is.null(strata))),
     class = "nested_simper"
   )
 
@@ -206,10 +214,12 @@ print.nested_simper <- function(x, digits = 3, ...) {
     }
   }
 
-  cat("\n1. MAIN FACTOR\n")
+  cat("\n1. MAIN FACTOR")
+  if (isTRUE(s$strata) && s$permutations > 0) cat(" (permutations within strata)")
+  cat("\n")
   show(x$main)
 
-  cat("\n2. NESTED FACTOR WITHIN EACH MAIN-FACTOR LEVEL\n")
+  cat("\n2. SECOND FACTOR WITHIN EACH MAIN-FACTOR LEVEL\n")
   for (i in seq_len(nrow(x$levels))) {
     r <- x$levels[i, ]
     cat("\n ", r$main_level, " (", r$group_sizes, ")\n", sep = "")

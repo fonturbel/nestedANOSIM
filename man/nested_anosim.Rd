@@ -14,6 +14,7 @@ nested_anosim(
   remove_empty = TRUE,
   p_adjust = "none",
   seed = NULL,
+  strata = NULL,
   verbose = TRUE,
   ...
 )
@@ -24,7 +25,8 @@ Must be numeric and contain only the community data.}
 
 \item{main}{Vector (factor/character) with the main grouping factor; length = nrow(comm).}
 
-\item{nested}{Vector (factor/character) with the factor nested within \code{main}.}
+\item{nested}{Vector (factor/character) with the second factor, tested within
+each level of \code{main} (nested in or crossed with \code{main}).}
 
 \item{method}{Dissimilarity index passed to vegan::vegdist() (default "bray").}
 
@@ -35,13 +37,21 @@ Must be numeric and contain only the community data.}
 \item{remove_empty}{Logical; drop samples whose total abundance is zero (default TRUE).
 Needed because Bray-Curtis is undefined for empty rows.}
 
-\item{p_adjust}{Method for p.adjust() applied to the nested tests (default "none";
+\item{p_adjust}{Method for p.adjust() applied to the within-level tests (default "none";
 e.g., "holm", "bonferroni", "BH").}
 
 \item{seed}{Optional integer. If given, the RNG seed is set to this value
 before \emph{each} ANOSIM, so every test is reproducible on its
 own (e.g., the main-factor test equals
 \code{set.seed(seed); vegan::anosim(dist, main)}).}
+
+\item{strata}{Optional vector (length = nrow(comm)) of blocks for the
+main-factor test. Permutations are then restricted within
+blocks, which is needed when the same sampling unit (e.g., a
+camera) is measured in every level of the main factor (e.g.,
+every year). It is trimmed together with the empty samples.
+It is used only for the main-factor test: the overall and
+within-level tests use unrestricted permutations.}
 
 \item{verbose}{Logical; print the formatted report when the function runs (default TRUE).}
 
@@ -51,8 +61,8 @@ own (e.g., the main-factor test equals
 An object of class "nested_anosim", a list with:
 \item{overall}{anosim object for the combined main.nested factor}
 \item{main}{anosim object for the main factor}
-\item{nested}{data.frame with the nested-factor test for each main-factor level}
-\item{nested_objects}{list with the full anosim objects of the nested tests}
+\item{nested}{data.frame with the second-factor test within each main-factor level}
+\item{nested_objects}{list with the full anosim objects of the within-level tests}
 \item{group_summary}{data.frame: N, mean richness and mean abundance per main.nested group}
 \item{dist}{the dissimilarity matrix used}
 \item{removed}{indices of the samples removed (empty rows)}
@@ -61,14 +71,24 @@ An object of class "nested_anosim", a list with:
 }
 \description{
 vegan::anosim() only handles one grouping factor. This function wraps it to
-run a "two-way" ANOSIM in which a nested factor (e.g., mistletoe species)
-is evaluated within each level of a main factor (e.g., study year):
+run a "two-way" ANOSIM in which a second factor (\code{nested}, e.g., mistletoe
+species) is tested within each level of a main factor (\code{main}, e.g., study
+year):
 \enumerate{
 \item Overall test on the combined main.nested factor.
-\item Test of the main factor alone.
-\item Test of the nested factor separately within each level of the main factor
-(optionally with multiple-testing correction).
+\item Test of the main factor alone (optionally with permutations restricted
+within \code{strata}, for paired or repeated samples).
+\item Test of the second factor separately within each level of the main
+factor (optionally with multiple-testing correction).
 }
+}
+\details{
+The second factor can be truly nested in the main factor (each of its levels
+occurs in only one main-factor level, e.g., sites within regions) or crossed
+with it (the same levels occur in every main-factor level, e.g., the same two
+mistletoe species sampled every year). The analysis is the same; only the
+wording of the results changes. In the crossed case, step 3 tests the second
+factor separately in each level of the main factor (simple effects).
 }
 \examples{
 data(mistletoe_visitors)
@@ -77,7 +97,7 @@ res <- nested_anosim(comm   = comm,
                      main   = mistletoe_visitors$Year_study,
                      nested = mistletoe_visitors$Mistletoe,
                      permutations = 199, p_adjust = "holm", seed = 123)
-res$nested          # table of nested tests
+res$nested          # tests within each main-factor level
 res$group_summary
 
 }

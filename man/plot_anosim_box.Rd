@@ -21,7 +21,7 @@ class \code{"nested_anosim"} (see \code{\link{nested_anosim}}).}
 
 \item{which}{Only used when \code{x} is a \code{"nested_anosim"} object.
 One of \code{"overall"}, \code{"main"}, or the name of a main-factor level
-(e.g., \code{"First"}) to plot the nested test run within that level.}
+(e.g., \code{"First"}) to plot the second-factor test run within that level.}
 
 \item{title}{Plot title. If \code{NULL}, a title is built automatically.}
 
