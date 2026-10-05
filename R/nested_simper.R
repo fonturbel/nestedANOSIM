@@ -17,6 +17,17 @@
 #' (Warton et al. 2012), so read them alongside the group means (`mean_a`,
 #' `mean_b`) and, if permutations are used, the p-values.
 #'
+#' @section P-values with more than two groups:
+#' [vegan::simper()] computes the p-value of each taxon by permuting the labels
+#' of *all* groups at once, not only those of the two groups being compared.
+#' When a factor has three or more levels, the p-values of one pair therefore
+#' also depend on the other groups. For example, two similar groups can show
+#' several "significant" taxa because a very different third group enters the
+#' permutations. Treat these p-values as a guide, not as formal tests, and test
+#' a pair of interest on its own samples (e.g., with [vegan::anosim()] or by
+#' running SIMPER on those two groups only). The printed report flags this
+#' case.
+#'
 #' @inheritParams nested_anosim
 #' @param permutations Number of permutations for the taxon-level tests in
 #'   [vegan::simper()] (default 999). Use 0 to skip them (no p-values).
@@ -196,6 +207,15 @@ print.nested_simper <- function(x, digits = 3, ...) {
   cat("Samples analysed:", length(x$kept))
   if (length(x$removed) > 0) cat(" (", length(x$removed), " empty removed)", sep = "")
   cat("\n")
+
+  # Flag p-values computed with more than two groups (see ?nested_simper)
+  n_main <- length(unique(c(x$main$group_a, x$main$group_b)))
+  n_nested <- x$levels$n_groups[x$levels$note == ""]
+  if (s$permutations > 0 && any(c(n_main, n_nested) > 2)) {
+    cat("Note: with more than two groups, taxon p-values are computed by",
+        "permuting all groups,\n      so each pair's p-values also depend on",
+        "the other groups (see ?nested_simper).\n")
+  }
 
   show_cols <- c("species", "pct", "cum_pct", "mean_a", "mean_b")
   if (s$permutations > 0) show_cols <- c(show_cols, "p")

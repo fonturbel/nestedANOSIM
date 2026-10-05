@@ -87,6 +87,19 @@ descriptive: highly abundant and highly variable taxa tend to dominate them
 (Warton et al. 2012), so read them alongside the group means (\code{mean_a},
 \code{mean_b}) and, if permutations are used, the p-values.
 }
+\section{P-values with more than two groups}{
+
+\code{\link[vegan:simper]{vegan::simper()}} computes the p-value of each taxon by permuting the labels
+of \emph{all} groups at once, not only those of the two groups being compared.
+When a factor has three or more levels, the p-values of one pair therefore
+also depend on the other groups. For example, two similar groups can show
+several "significant" taxa because a very different third group enters the
+permutations. Treat these p-values as a guide, not as formal tests, and test
+a pair of interest on its own samples (e.g., with \code{\link[vegan:anosim]{vegan::anosim()}} or by
+running SIMPER on those two groups only). The printed report flags this
+case.
+}
+
 \examples{
 data(mistletoe_visitors)
 comm <- mistletoe_visitors[, -(1:3)]

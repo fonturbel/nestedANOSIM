@@ -121,3 +121,25 @@ test_that("strata restricts SIMPER permutations for the main factor only", {
   expect_silent(nested_simper(dd$comm, dd$main, dd$nested, permutations = 0,
                               strata = cam, verbose = FALSE))
 })
+
+test_that("the report flags p-values computed with more than two groups", {
+  dd <- make_comm()
+  # main has 2 groups, nested has 2 per level: no note
+  sim2 <- nested_simper(dd$comm, dd$main, dd$nested, permutations = 9,
+                        verbose = FALSE)
+  expect_false(any(grepl("more than two groups", capture.output(print(sim2)))))
+  # 3 nested groups within each main level: note
+  nested3 <- rep(c("x", "y", "z", "z", "x"), 4)
+  sim3 <- nested_simper(dd$comm, dd$main, nested3, permutations = 9,
+                        verbose = FALSE)
+  expect_output(print(sim3), "more than two groups")
+  # 3 main groups: note
+  main3 <- rep(c("A", "B", "C", "A", "B"), each = 4)
+  sim4 <- nested_simper(dd$comm, main3, rep("x", 20), permutations = 9,
+                        verbose = FALSE)
+  expect_output(print(sim4), "more than two groups")
+  # no permutations, no p-values: no note
+  sim5 <- nested_simper(dd$comm, dd$main, nested3, permutations = 0,
+                        verbose = FALSE)
+  expect_false(any(grepl("more than two groups", capture.output(print(sim5)))))
+})

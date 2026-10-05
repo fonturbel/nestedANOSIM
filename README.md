@@ -2,7 +2,7 @@
 
 [![R-CMD-check](https://github.com/fonturbel/nestedANOSIM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fonturbel/nestedANOSIM/actions/workflows/R-CMD-check.yaml)
 
-### nestedANOSIM package version 0.0-3
+### nestedANOSIM package version 0.0-4
 
 A small toolkit for **hierarchical (two-way, nested) ANOSIM** on community data, plus ggplot2 graphics for ANOSIM and nMDS results. The `vegan` package only implements one-way ANOSIM (`vegan::anosim()`); this package wraps it to test a second factor (e.g., mistletoe species) within each level of a main factor (e.g., study year) in a single call. The second factor can be nested in the main factor (e.g., sites within regions) or crossed with it (e.g., the same species sampled every year).
 
@@ -13,7 +13,7 @@ This package was developed by Francisco E. Fontúrbel from code originally writt
 - **Overall test**: ANOSIM on the combined `main.nested` factor.
 - **Main factor test**: ANOSIM on the main factor alone, optionally with permutations restricted within blocks (`strata`) when the same sampling units are measured in every level (e.g., the same cameras every year).
 - **Within-level tests**: ANOSIM of the second factor within each level of the main factor, with optional multiple-testing correction (`p_adjust`).
-- **SIMPER**: which taxa drive the differences, for the main factor and for the second factor within each main-factor level, as tidy tables (`nested_simper()`).
+- **SIMPER**: which taxa drive the differences, for the main factor and for the second factor within each main-factor level, as tidy tables (`nested_simper()`). With more than two groups, its taxon p-values are a guide rather than formal tests (see `?nested_simper`).
 - **Group summary**: sample size, mean richness and mean abundance per `main.nested` group.
 - **Plots**: rank-dissimilarity boxplots (`plot_anosim_box()`) and nMDS ordinations with convex hulls for any number of groups (`plot_nmds_hulls()`).
 

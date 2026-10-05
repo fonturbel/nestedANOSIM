@@ -1,6 +1,6 @@
 Package: nestedANOSIM
 Title: Hierarchical (Nested) ANOSIM and Graphics for Community Data
-Version: 0.0-3
+Version: 0.0-4
 Authors@R:
     person("Francisco Enrique", "Fontúrbel", , "fonturbel@gmail.com",
            role = c("aut", "cre"),

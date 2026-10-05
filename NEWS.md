@@ -1,3 +1,10 @@
+# nestedANOSIM 0.0-4
+
+* `?nested_simper` has a new section on p-values with more than two groups:
+  `vegan::simper()` permutes the labels of all groups at once, so the p-values
+  of one pair also depend on the other groups. The printed report now flags
+  this case.
+
 # nestedANOSIM 0.0-3
 
 * New `strata` argument in `nested_anosim()` and `nested_simper()`: restricts
